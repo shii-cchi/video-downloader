@@ -56,7 +56,7 @@ func (c Consumer) getVideoDownloadParams() (dto.VideoDownloadDto, error) {
 	delivery := <-c.deliveryCh
 	log.Printf("received a message: %s\n", delivery.Body)
 
-	var rabbitMessage dto.RabbitMessageDto
+	var rabbitMessage dto.ReceivedMessageDto
 
 	if err := json.Unmarshal(delivery.Body, &rabbitMessage); err != nil {
 		log.WithError(err).Error("failed to unmarshal message: %s", delivery.Body)
@@ -71,7 +71,12 @@ func (c Consumer) getVideoDownloadParams() (dto.VideoDownloadDto, error) {
 }
 
 func (c Consumer) sendVideoInfo(videoInfo dto.VideoInfoDto) error {
-	msg, err := json.Marshal(videoInfo)
+	videoInfoMsg := dto.VideoInfoMessageDto{
+		Pattern: c.queueToPublish,
+		Data:    videoInfo,
+	}
+
+	msg, err := json.Marshal(videoInfoMsg)
 	if err != nil {
 		log.WithError(err).Error("error marshaling video info: %s", videoInfo)
 		return fmt.Errorf("error marshaling video info: %s", videoInfo)
@@ -95,13 +100,14 @@ func (c Consumer) sendVideoInfo(videoInfo dto.VideoInfoDto) error {
 }
 
 func (c Consumer) sendError(errToSend error) {
-	errStruct := struct {
-		Err string `json:"error"`
-	}{
-		Err: errToSend.Error(),
+	errMsg := dto.ErrorMessageDto{
+		Pattern: c.errorQueue,
+		Data: dto.ErrorDto{
+			Error: errToSend.Error(),
+		},
 	}
 
-	msg, err := json.Marshal(errStruct)
+	msg, err := json.Marshal(errMsg)
 	if err != nil {
 		log.WithError(err).Error("error marshaling error: %s", err)
 	}

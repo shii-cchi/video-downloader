@@ -20,6 +20,21 @@ async function bootstrap() {
       },
     },
   });
+
+  app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: [
+        `amqp://${configurationService.env.RABBITMQ_HOST}:${configurationService.env.RABBITMQ_PORT}`,
+      ],
+      queue: configurationService.env.ERROR_QUEUE,
+      noAck: true,
+      queueOptions: {
+        durable: true,
+      },
+    },
+  });
+
   await app.startAllMicroservices();
   await app.listen(3000);
 }

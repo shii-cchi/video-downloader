@@ -1,6 +1,6 @@
 package dto
 
-type RabbitMessageDto struct {
+type ReceivedMessageDto struct {
 	Pattern string           `json:"pattern"`
 	Data    VideoDownloadDto `json:"data"`
 }

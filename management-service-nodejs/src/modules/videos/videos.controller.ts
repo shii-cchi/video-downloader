@@ -24,8 +24,13 @@ export class VideosController {
     return { message: 'Starting video download' };
   }
 
-  @EventPattern()
+  @EventPattern('downloaded_video_queue')
   processVideoInfo(@Payload() data: VideoInfoDto) {
     this.videosService.saveNewVideo(data);
+  }
+
+  @EventPattern('error_queue')
+  processError(@Payload() err: { data: string }) {
+    console.log(err);
   }
 }

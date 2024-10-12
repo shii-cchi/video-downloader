@@ -23,6 +23,10 @@ export class EnvironmentConfig {
   @IsNotEmpty()
   DOWNLOADED_VIDEO_QUEUE: string;
 
+  @IsString()
+  @IsNotEmpty()
+  ERROR_QUEUE: string;
+
   //   DB_USER: string;
 
   //   DB_PASSWORD: string;
