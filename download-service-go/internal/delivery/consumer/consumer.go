@@ -8,6 +8,7 @@ import (
 )
 
 type Consumer struct {
+	queueToPublish       string
 	ch                   *amqp.Channel
 	deliveryCh           <-chan amqp.Delivery
 	videoDownloadService VideoDownloadService
@@ -17,8 +18,9 @@ type VideoDownloadService interface {
 	Download(downloadParams dto.VideoDownloadDto) (dto.VideoInfoDto, error)
 }
 
-func NewConsumer(ch *amqp.Channel, deliveryCh <-chan amqp.Delivery, videoDownloadService VideoDownloadService) *Consumer {
+func NewConsumer(queueToPublish string, ch *amqp.Channel, deliveryCh <-chan amqp.Delivery, videoDownloadService VideoDownloadService) *Consumer {
 	return &Consumer{
+		queueToPublish:       queueToPublish,
 		ch:                   ch,
 		deliveryCh:           deliveryCh,
 		videoDownloadService: videoDownloadService,
@@ -69,7 +71,7 @@ func (c Consumer) SendVideoInfo(videoInfo dto.VideoInfoDto) {
 
 	if err = c.ch.Publish(
 		"",
-		"downloaded_video_queue",
+		c.queueToPublish,
 		false,
 		false,
 		amqp.Publishing{

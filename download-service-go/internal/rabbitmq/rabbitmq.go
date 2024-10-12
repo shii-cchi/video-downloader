@@ -11,7 +11,7 @@ type Rabbit struct {
 	DeliveryCh <-chan amqp.Delivery
 }
 
-func InitRabbit(url string) (*Rabbit, error) {
+func InitRabbit(url string, queueToConsume string) (*Rabbit, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %s", err)
@@ -23,7 +23,7 @@ func InitRabbit(url string) (*Rabbit, error) {
 	}
 
 	deliveryCh, err := ch.Consume(
-		"video_to_download_queue",
+		queueToConsume,
 		"",
 		true,
 		false,
