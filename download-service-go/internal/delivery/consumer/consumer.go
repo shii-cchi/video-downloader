@@ -14,7 +14,7 @@ type Consumer struct {
 }
 
 type VideoDownloadService interface {
-	Download(params dto.VideoDownloadDto) (dto.VideoInfoDto, error)
+	Download(downloadParams dto.VideoDownloadDto) (dto.VideoInfoDto, error)
 }
 
 func NewConsumer(ch *amqp.Channel, deliveryCh <-chan amqp.Delivery, videoDownloadService VideoDownloadService) *Consumer {
@@ -29,12 +29,12 @@ func (c Consumer) ProcessMessage() {
 	log.Info("start consuming messages")
 
 	for {
-		params, err := c.GetVideoDownloadParams()
+		downloadParams, err := c.GetVideoDownloadParams()
 		if err != nil {
 			continue
 		}
 
-		videoInfo, err := c.videoDownloadService.Download(params)
+		videoInfo, err := c.videoDownloadService.Download(downloadParams)
 		if err != nil {
 			continue
 		}
@@ -47,14 +47,14 @@ func (c Consumer) GetVideoDownloadParams() (dto.VideoDownloadDto, error) {
 	delivery := <-c.deliveryCh
 	log.Printf("received a message: %s\n", delivery.Body)
 
-	var params dto.VideoDownloadDto
+	var downloadParams dto.VideoDownloadDto
 
-	if err := json.Unmarshal(delivery.Body, &params); err != nil {
+	if err := json.Unmarshal(delivery.Body, &downloadParams); err != nil {
 		log.WithError(err).Error("failed to unmarshal message: %s", delivery.Body)
 		return dto.VideoDownloadDto{}, err
 	}
 
-	return params, nil
+	return downloadParams, nil
 }
 
 func (c Consumer) SendVideoInfo(videoInfo dto.VideoInfoDto) {
