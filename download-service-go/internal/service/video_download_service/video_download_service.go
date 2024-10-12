@@ -1,6 +1,8 @@
 package video_download_service
 
-import "download-service-go/internal/model"
+import (
+	"download-service-go/internal/delivery/dto"
+)
 
 type Preview interface {
 }
@@ -23,6 +25,6 @@ func (v *VideoDownloadService) setVideoDownloadStrategy(strategy VideoDownloadSt
 	v.strategy = strategy
 }
 
-func (v *VideoDownloadService) Download(params model.VideoDownloadParams) (model.VideoInfo, error) {
-	return model.VideoInfo{}, nil
+func (v *VideoDownloadService) Download(params dto.VideoDownloadDto) (dto.VideoInfoDto, error) {
+	return dto.VideoInfoDto{}, nil
 }

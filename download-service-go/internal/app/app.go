@@ -1,7 +1,7 @@
 package app
 
 import (
-	"download-service-go/internal/consumer"
+	"download-service-go/internal/delivery/consumer"
 	"download-service-go/internal/rabbitmq"
 	"download-service-go/internal/service/preview_service"
 	"download-service-go/internal/service/video_download_service"
@@ -11,7 +11,7 @@ import (
 func Run() {
 	rabbit, err := rabbitmq.InitRabbit("amqp://guest:guest@localhost:5672/")
 	if err != nil {
-		log.Fatalf("error init rabbitmq: %s\n", err)
+		log.WithError(err).Fatal("error init rabbitmq")
 	}
 	log.Info("successfully connection to rabbitmq")
 	defer rabbit.Close()

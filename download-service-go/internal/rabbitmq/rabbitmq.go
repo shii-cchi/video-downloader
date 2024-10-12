@@ -1,7 +1,6 @@
 package rabbitmq
 
 import (
-	"errors"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -15,12 +14,12 @@ type Rabbit struct {
 func InitRabbit(url string) (*Rabbit, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to RabbitMQ %s\n", err)
+		return nil, fmt.Errorf("failed to connect to RabbitMQ: %s", err)
 	}
 
 	ch, err := conn.Channel()
 	if err != nil {
-		return nil, errors.New("failed to open a Ch")
+		return nil, fmt.Errorf("failed to open a channel: %s", err)
 	}
 
 	deliveryCh, err := ch.Consume(
@@ -32,6 +31,9 @@ func InitRabbit(url string) (*Rabbit, error) {
 		false,
 		nil,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get delivery channel: %s", err)
+	}
 
 	return &Rabbit{
 		Conn:       conn,
