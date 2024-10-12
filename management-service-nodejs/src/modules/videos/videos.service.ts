@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { ClientProxy } from '@nestjs/microservices';
+import { VideoInfoDto } from './dto/video-info.dto';
 
 @Injectable()
 export class VideosService {
@@ -10,7 +11,8 @@ export class VideosService {
     this.downloadClient.emit('video_to_download_queue', createDto);
   }
 
-  saveToDb(data: string) {
+  saveNewVideo(data: VideoInfoDto) {
     console.log(data);
+    // save to db
   }
 }

@@ -9,6 +9,7 @@ import {
 import { VideosService } from './videos.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { EventPattern, Payload } from '@nestjs/microservices';
+import { VideoInfoDto } from './dto/video-info.dto';
 
 @Controller('videos')
 @UsePipes(new ValidationPipe())
@@ -24,7 +25,7 @@ export class VideosController {
   }
 
   @EventPattern()
-  saveToDb(@Payload() data: string) {
-    this.videosService.saveToDb(data);
+  processVideoInfo(@Payload() data: VideoInfoDto) {
+    this.videosService.saveNewVideo(data);
   }
 }
