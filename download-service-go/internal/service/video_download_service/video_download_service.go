@@ -3,6 +3,7 @@ package video_download_service
 import (
 	"download-service-go/internal/delivery/dto"
 	"download-service-go/internal/service/strategies"
+	log "github.com/sirupsen/logrus"
 )
 
 const youTubeVideoType = "youtube"
@@ -40,11 +41,13 @@ func (v *VideoDownloadService) Download(downloadParams dto.VideoDownloadDto) (dt
 
 	videoName, realPath, err := v.strategy.Download(downloadParams.VideoURL, downloadParams.Quality)
 	if err != nil {
+		log.WithError(err).Error("error downloading video")
 		return dto.VideoInfoDto{}, err
 	}
 
 	previewPath, err := v.previewService.CreatePreview(videoName, realPath)
 	if err != nil {
+		log.WithError(err).Error("error creating video preview")
 		return dto.VideoInfoDto{}, err
 	}
 

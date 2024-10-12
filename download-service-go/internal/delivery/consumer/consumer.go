@@ -47,14 +47,18 @@ func (c Consumer) GetVideoDownloadParams() (dto.VideoDownloadDto, error) {
 	delivery := <-c.deliveryCh
 	log.Printf("received a message: %s\n", delivery.Body)
 
-	var downloadParams dto.VideoDownloadDto
+	var rabbitMessage dto.RabbitMessageDto
 
-	if err := json.Unmarshal(delivery.Body, &downloadParams); err != nil {
+	if err := json.Unmarshal(delivery.Body, &rabbitMessage); err != nil {
 		log.WithError(err).Error("failed to unmarshal message: %s", delivery.Body)
 		return dto.VideoDownloadDto{}, err
 	}
 
-	return downloadParams, nil
+	return dto.VideoDownloadDto{
+		VideoURL: rabbitMessage.Data.VideoURL,
+		Type:     rabbitMessage.Data.Type,
+		Quality:  rabbitMessage.Data.Quality,
+	}, nil
 }
 
 func (c Consumer) SendVideoInfo(videoInfo dto.VideoInfoDto) {

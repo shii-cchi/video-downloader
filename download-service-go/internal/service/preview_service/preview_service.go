@@ -34,7 +34,7 @@ func (p *PreviewService) CreatePreview(videoName string, realPath string) (strin
 
 	videoPath := filepath.Join(common.VideoDir, realPath)
 	videoName = common.ReplaceSpecialSymbols(videoName)
-	previewPath := filepath.Join(previewDir, previewDir, videoName+previewFormat)
+	previewPath := filepath.Join(commonPreviewDir, previewDir, videoName+previewFormat)
 
 	videoDuration, err := p.getVideoDuration(videoPath)
 	if err != nil {
