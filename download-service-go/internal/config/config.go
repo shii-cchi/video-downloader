@@ -13,6 +13,7 @@ type Config struct {
 	RabbitMQPort         string
 	ToDownloadQueue      string
 	DownloadedVideoQueue string
+	ErrorQueue           string
 }
 
 func LoadConfig() (*Config, error) {
@@ -51,6 +52,11 @@ func LoadConfig() (*Config, error) {
 		return nil, errors.New("DOWNLOADED_VIDEO_QUEUE parameter is not defined")
 	}
 
+	errorQueue := os.Getenv("ERROR_QUEUE")
+	if errorQueue == "" {
+		return nil, errors.New("ERROR_QUEUE parameter is not defined")
+	}
+
 	return &Config{
 		RabbitMQDefaultUser:  rabbitMQDefaultUser,
 		RabbitMQDefaultPass:  rabbitMQDefaultPass,
@@ -58,5 +64,6 @@ func LoadConfig() (*Config, error) {
 		RabbitMQPort:         rabbitMQPort,
 		ToDownloadQueue:      toDownloadQueue,
 		DownloadedVideoQueue: downloadedVideoQueue,
+		ErrorQueue:           errorQueue,
 	}, nil
 }

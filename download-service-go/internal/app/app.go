@@ -26,6 +26,6 @@ func Run() {
 
 	videoDownloadService := video_download_service.NewVideoDownloadService(preview_service.NewPreviewService())
 
-	c := consumer.NewConsumer(cfg.DownloadedVideoQueue, rabbit.Ch, rabbit.DeliveryCh, videoDownloadService)
+	c := consumer.NewConsumer(cfg.DownloadedVideoQueue, cfg.ErrorQueue, rabbit.Ch, rabbit.DeliveryCh, videoDownloadService)
 	c.ProcessMessage()
 }
