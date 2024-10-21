@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { VideosController } from './videos.controller';
 import { VideosService } from './videos.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -33,6 +33,9 @@ import { Video, VideoSchema } from './schemas/video.schema';
     MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
   ],
   controllers: [VideosController],
-  providers: [VideosService],
+  providers: [
+    VideosService,
+    { provide: Logger, useValue: new Logger('VideosModule') },
+  ],
 })
 export class VideosModule {}

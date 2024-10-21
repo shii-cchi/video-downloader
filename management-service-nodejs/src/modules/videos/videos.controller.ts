@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Inject,
+  Logger,
   Post,
   UsePipes,
   ValidationPipe,
@@ -21,10 +22,17 @@ import { ChannelWrapper } from 'amqp-connection-manager';
 @UsePipes(new ValidationPipe())
 export class VideosController {
   @Inject()
+  private readonly logger: Logger;
+
+  @Inject()
   private readonly videosService: VideosService;
 
   @Post('/download-to-server')
   download(@Body() createVideoDto: CreateVideoDto): { message: string } {
+    this.logger.debug(
+      `Download request has been received with body: ${JSON.stringify(createVideoDto)}`,
+    );
+
     this.videosService.download(createVideoDto);
     return { message: 'Starting video download' };
   }
@@ -36,7 +44,14 @@ export class VideosController {
   ) {
     const channel: ChannelWrapper = context.getChannelRef();
     const originalMsg = context.getMessage();
+    this.logger.debug(
+      `Message with video info has been received: ${JSON.stringify(data)}`,
+    );
+
     await this.videosService.saveNewVideo(data);
+    this.logger.log(
+      `Video "${data.videoName}" has been successfully downloaded`,
+    );
     channel.ack(originalMsg);
   }
 
@@ -44,7 +59,11 @@ export class VideosController {
   processError(@Payload() err: { error: string }, @Ctx() context: RmqContext) {
     const channel: ChannelWrapper = context.getChannelRef();
     const originalMsg = context.getMessage();
-    console.log(err);
+    this.logger.debug(
+      `Message with error has been received: ${JSON.stringify(err)}`,
+    );
+    this.logger.error(`Error downloading video: ${JSON.stringify(err)}`);
+
     channel.ack(originalMsg);
   }
 }

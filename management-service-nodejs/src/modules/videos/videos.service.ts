@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { ClientProxy, RmqRecordBuilder } from '@nestjs/microservices';
 import { VideoInfoDto } from './dto/video-info.dto';
@@ -16,6 +16,9 @@ export class VideosService {
   @Inject()
   private readonly configurationService: ConfigurationService;
 
+  @Inject()
+  private readonly logger: Logger;
+
   @InjectModel(Video.name)
   private readonly videoModel: Model<VideoDocument>;
 
@@ -23,6 +26,9 @@ export class VideosService {
     const message = new RmqRecordBuilder(omit(createDto, ['folderID']))
       .setOptions({ persistent: true })
       .build();
+    this.logger.debug(
+      `Sending message for downloading with data: ${JSON.stringify(message)}`,
+    );
 
     this.downloadClient.emit(
       this.configurationService.env.TO_DOWNLOAD_QUEUE,
@@ -31,7 +37,7 @@ export class VideosService {
   }
 
   async saveNewVideo(data: VideoInfoDto): Promise<Video> {
-    console.log(data);
+    this.logger.debug(`Saving video info to db: ${JSON.stringify(data)}`);
     return this.videoModel.create(data);
   }
 }
