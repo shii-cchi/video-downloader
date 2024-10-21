@@ -145,7 +145,7 @@ func (s YouTubeDownloadStrategy) deleteTmpFiles(videoPath, audioPath string) err
 	}
 
 	if errMsg != "" {
-		return fmt.Errorf("error geleting tmp files: %s", errMsg)
+		return fmt.Errorf("error deleting tmp files: %s", errMsg)
 	}
 
 	return nil

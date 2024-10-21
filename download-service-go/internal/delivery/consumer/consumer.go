@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"download-service-go/internal/delivery/dto"
+	"download-service-go/internal/rabbitmq"
 	"encoding/json"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -9,10 +10,7 @@ import (
 )
 
 type Consumer struct {
-	queueToPublish       string
-	errorQueue           string
-	ch                   *amqp.Channel
-	deliveryCh           <-chan amqp.Delivery
+	rabbit               *rabbitmq.Rabbit
 	videoDownloadService VideoDownloadService
 }
 
@@ -20,12 +18,9 @@ type VideoDownloadService interface {
 	Download(downloadParams dto.VideoDownloadDto) (dto.VideoInfoDto, error)
 }
 
-func NewConsumer(queueToPublish string, errorQueue string, ch *amqp.Channel, deliveryCh <-chan amqp.Delivery, videoDownloadService VideoDownloadService) *Consumer {
+func NewConsumer(rabbit *rabbitmq.Rabbit, videoDownloadService VideoDownloadService) *Consumer {
 	return &Consumer{
-		queueToPublish:       queueToPublish,
-		errorQueue:           errorQueue,
-		ch:                   ch,
-		deliveryCh:           deliveryCh,
+		rabbit:               rabbit,
 		videoDownloadService: videoDownloadService,
 	}
 }
@@ -34,64 +29,70 @@ func (c Consumer) ProcessMessage() {
 	log.Info("start consuming messages")
 
 	for {
-		downloadParams, err := c.getVideoDownloadParams()
+		downloadParams, delivery, err := c.getVideoDownloadParams()
 		if err != nil {
-			c.sendError(err)
+			log.WithError(err).WithError(fmt.Errorf("error getting message with video' download params"))
+			c.sendError("error getting message with video' download params")
+			delivery.Ack(false)
 			continue
 		}
 
 		videoInfo, err := c.videoDownloadService.Download(downloadParams)
 		if err != nil {
-			c.sendError(err)
+			c.sendError(fmt.Sprintf("error downloading video %s", downloadParams.VideoURL))
+			delivery.Ack(false)
 			continue
 		}
 
 		if err := c.sendVideoInfo(videoInfo); err != nil {
-			c.sendError(err)
+			log.WithError(err).WithError(fmt.Errorf("error sending video info"))
+			c.sendError("error sending video info")
+			delivery.Ack(false)
+			continue
 		}
+
+		delivery.Ack(false)
 	}
 }
 
-func (c Consumer) getVideoDownloadParams() (dto.VideoDownloadDto, error) {
-	delivery := <-c.deliveryCh
+func (c Consumer) getVideoDownloadParams() (dto.VideoDownloadDto, amqp.Delivery, error) {
+	delivery := <-c.rabbit.DeliveryCh
 	log.Printf("received a message: %s\n", delivery.Body)
 
 	var rabbitMessage dto.ReceivedMessageDto
 
 	if err := json.Unmarshal(delivery.Body, &rabbitMessage); err != nil {
-		log.WithError(err).Error("failed to unmarshal message: %s", delivery.Body)
-		return dto.VideoDownloadDto{}, fmt.Errorf("failed to unmarshal message: (%s)", delivery.Body)
+		return dto.VideoDownloadDto{}, amqp.Delivery{}, fmt.Errorf("failed to unmarshal message: (%s)", delivery.Body)
 	}
 
 	return dto.VideoDownloadDto{
 		VideoURL: rabbitMessage.Data.VideoURL,
 		Type:     rabbitMessage.Data.Type,
 		Quality:  rabbitMessage.Data.Quality,
-	}, nil
+	}, delivery, nil
 }
 
 func (c Consumer) sendVideoInfo(videoInfo dto.VideoInfoDto) error {
 	videoInfoMsg := dto.VideoInfoMessageDto{
-		Pattern: c.queueToPublish,
+		Pattern: c.rabbit.QueueToPublish,
 		Data:    videoInfo,
 	}
 
 	msg, err := json.Marshal(videoInfoMsg)
 	if err != nil {
-		log.WithError(err).Error("error marshaling video info: %s", videoInfo)
 		return fmt.Errorf("error marshaling video info: %s", videoInfo)
 	}
 
-	if err = c.ch.Publish(
+	if err = c.rabbit.Ch.Publish(
 		"",
-		c.queueToPublish,
+		c.rabbit.QueueToPublish,
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        msg,
+			ContentType:  "text/plain",
+			Body:         msg,
+			DeliveryMode: amqp.Persistent,
 		}); err != nil {
-		log.WithError(err).Error("error publishing video info: %s", msg)
 		return fmt.Errorf("error publishing video info: %s", msg)
 	}
 
@@ -99,29 +100,32 @@ func (c Consumer) sendVideoInfo(videoInfo dto.VideoInfoDto) error {
 	return nil
 }
 
-func (c Consumer) sendError(errToSend error) {
+func (c Consumer) sendError(errToSend string) {
 	errMsg := dto.ErrorMessageDto{
-		Pattern: c.errorQueue,
+		Pattern: c.rabbit.ErrorQueue,
 		Data: dto.ErrorDto{
-			Error: errToSend.Error(),
+			Error: errToSend,
 		},
 	}
 
 	msg, err := json.Marshal(errMsg)
 	if err != nil {
 		log.WithError(err).Error("error marshaling error: %s", err)
+		return
 	}
 
-	if err = c.ch.Publish(
+	if err = c.rabbit.Ch.Publish(
 		"",
-		c.errorQueue,
+		c.rabbit.ErrorQueue,
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        msg,
+			ContentType:  "text/plain",
+			Body:         msg,
+			DeliveryMode: amqp.Persistent,
 		}); err != nil {
 		log.WithError(err).Error("error publishing error: %s", msg)
+		return
 	}
 
 	log.Printf("sent msg: %s into queue", string(msg))

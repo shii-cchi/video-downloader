@@ -17,7 +17,8 @@ func Run() {
 	}
 	log.Println("successfully load config")
 
-	rabbit, err := rabbitmq.InitRabbit(fmt.Sprintf("amqp://%s:%s@%s:%s/", cfg.RabbitMQDefaultUser, cfg.RabbitMQDefaultPass, cfg.RabbitMQHost, cfg.RabbitMQPort), cfg.ToDownloadQueue)
+	rabbitURL := fmt.Sprintf("amqp://%s:%s@%s:%s/", cfg.RabbitMQDefaultUser, cfg.RabbitMQDefaultPass, cfg.RabbitMQHost, cfg.RabbitMQPort)
+	rabbit, err := rabbitmq.InitRabbit(rabbitURL, cfg.ToDownloadQueue, cfg.DownloadedVideoQueue, cfg.ErrorQueue)
 	if err != nil {
 		log.WithError(err).Fatal("error init rabbitmq")
 	}
@@ -26,6 +27,7 @@ func Run() {
 
 	videoDownloadService := video_download_service.NewVideoDownloadService(preview_service.NewPreviewService())
 
-	c := consumer.NewConsumer(cfg.DownloadedVideoQueue, cfg.ErrorQueue, rabbit.Ch, rabbit.DeliveryCh, videoDownloadService)
+	c := consumer.NewConsumer(rabbit, videoDownloadService)
+
 	c.ProcessMessage()
 }

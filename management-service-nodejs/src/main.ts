@@ -14,7 +14,7 @@ async function bootstrap() {
         `amqp://${configurationService.env.RABBITMQ_HOST}:${configurationService.env.RABBITMQ_PORT}`,
       ],
       queue: configurationService.env.DOWNLOADED_VIDEO_QUEUE,
-      noAck: true,
+      noAck: false,
       queueOptions: {
         durable: true,
       },
@@ -28,7 +28,7 @@ async function bootstrap() {
         `amqp://${configurationService.env.RABBITMQ_HOST}:${configurationService.env.RABBITMQ_PORT}`,
       ],
       queue: configurationService.env.ERROR_QUEUE,
-      noAck: true,
+      noAck: false,
       queueOptions: {
         durable: true,
       },

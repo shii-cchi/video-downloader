@@ -6,12 +6,14 @@ import (
 )
 
 type Rabbit struct {
-	Conn       *amqp.Connection
-	Ch         *amqp.Channel
-	DeliveryCh <-chan amqp.Delivery
+	QueueToPublish string
+	ErrorQueue     string
+	Conn           *amqp.Connection
+	Ch             *amqp.Channel
+	DeliveryCh     <-chan amqp.Delivery
 }
 
-func InitRabbit(url string, queueToConsume string) (*Rabbit, error) {
+func InitRabbit(url string, queueToConsume string, queueToPublish string, errorQueue string) (*Rabbit, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %s", err)
@@ -22,10 +24,15 @@ func InitRabbit(url string, queueToConsume string) (*Rabbit, error) {
 		return nil, fmt.Errorf("failed to open a channel: %s", err)
 	}
 
+	err = ch.Qos(1, 0, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set QoS to channel: %s", err)
+	}
+
 	deliveryCh, err := ch.Consume(
 		queueToConsume,
 		"",
-		true,
+		false,
 		false,
 		false,
 		false,
@@ -35,10 +42,15 @@ func InitRabbit(url string, queueToConsume string) (*Rabbit, error) {
 		return nil, fmt.Errorf("failed to get delivery channel: %s", err)
 	}
 
+	closeCh := make(chan *amqp.Error)
+	conn.NotifyClose(closeCh)
+
 	return &Rabbit{
-		Conn:       conn,
-		Ch:         ch,
-		DeliveryCh: deliveryCh,
+		QueueToPublish: queueToPublish,
+		ErrorQueue:     errorQueue,
+		Conn:           conn,
+		Ch:             ch,
+		DeliveryCh:     deliveryCh,
 	}, nil
 }
 
