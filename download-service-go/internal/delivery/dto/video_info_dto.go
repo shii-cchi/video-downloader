@@ -6,7 +6,7 @@ type VideoInfoMessageDto struct {
 }
 
 type VideoInfoDto struct {
-	VideoName   string
-	RealPath    string
-	PreviewPath string
+	VideoName   string `json:"videoName"`
+	RealPath    string `json:"realPath"`
+	PreviewPath string `json:"previewPath"`
 }

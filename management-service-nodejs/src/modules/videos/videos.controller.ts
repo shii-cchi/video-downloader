@@ -26,20 +26,22 @@ export class VideosController {
   @Post('/download-to-server')
   download(@Body() createVideoDto: CreateVideoDto): { message: string } {
     this.videosService.download(createVideoDto);
-
     return { message: 'Starting video download' };
   }
 
   @MessagePattern('downloaded_video_queue')
-  processVideoInfo(@Payload() data: VideoInfoDto, @Ctx() context: RmqContext) {
+  async processVideoInfo(
+    @Payload() data: VideoInfoDto,
+    @Ctx() context: RmqContext,
+  ) {
     const channel: ChannelWrapper = context.getChannelRef();
     const originalMsg = context.getMessage();
-    this.videosService.saveNewVideo(data);
+    await this.videosService.saveNewVideo(data);
     channel.ack(originalMsg);
   }
 
   @MessagePattern('error_queue')
-  processError(@Payload() err: { data: string }, @Ctx() context: RmqContext) {
+  processError(@Payload() err: { error: string }, @Ctx() context: RmqContext) {
     const channel: ChannelWrapper = context.getChannelRef();
     const originalMsg = context.getMessage();
     console.log(err);

@@ -4,6 +4,8 @@ import { VideosService } from './videos.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigurationService } from 'src/lib/configuration/configuration.service';
 import { ConfigurationModule } from 'src/lib/configuration/configuration.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Video, VideoSchema } from './schemas/video.schema';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { ConfigurationModule } from 'src/lib/configuration/configuration.module'
         }),
       },
     ]),
+    MongooseModule.forFeature([{ name: Video.name, schema: VideoSchema }]),
   ],
   controllers: [VideosController],
   providers: [VideosService],

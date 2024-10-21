@@ -4,6 +4,9 @@ import { ClientProxy, RmqRecordBuilder } from '@nestjs/microservices';
 import { VideoInfoDto } from './dto/video-info.dto';
 import { omit } from 'lodash';
 import { ConfigurationService } from 'src/lib/configuration/configuration.service';
+import { Video, VideoDocument } from './schemas/video.schema';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable()
 export class VideosService {
@@ -12,6 +15,9 @@ export class VideosService {
 
   @Inject()
   private readonly configurationService: ConfigurationService;
+
+  @InjectModel(Video.name)
+  private readonly videoModel: Model<VideoDocument>;
 
   download(createDto: CreateVideoDto) {
     const message = new RmqRecordBuilder(omit(createDto, ['folderID']))
@@ -23,8 +29,9 @@ export class VideosService {
       message,
     );
   }
-  saveNewVideo(data: VideoInfoDto) {
+
+  async saveNewVideo(data: VideoInfoDto): Promise<Video> {
     console.log(data);
-    // save to db
+    return this.videoModel.create(data);
   }
 }

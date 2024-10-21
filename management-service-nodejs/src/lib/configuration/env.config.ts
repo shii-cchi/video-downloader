@@ -27,9 +27,17 @@ export class EnvironmentConfig {
   @IsNotEmpty()
   ERROR_QUEUE: string;
 
-  //   DB_USER: string;
+  @IsString()
+  @IsNotEmpty()
+  DB_USER: string;
 
-  //   DB_PASSWORD: string;
+  @IsString()
+  @IsNotEmpty()
+  DB_PASSWORD: string;
+
+  @IsString()
+  @IsNotEmpty()
+  CLUSTER_NAME: string;
 }
 
 export default registerAs(
