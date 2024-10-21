@@ -31,8 +31,8 @@ func (c Consumer) ProcessMessage() {
 	for {
 		downloadParams, delivery, err := c.getVideoDownloadParams()
 		if err != nil {
-			log.WithError(err).WithError(fmt.Errorf("error getting message with video' download params"))
-			c.sendError("error getting message with video' download params")
+			log.WithError(err).WithError(fmt.Errorf("error getting message with video download params"))
+			c.sendError("error getting message with video download params")
 			delivery.Ack(false)
 			continue
 		}
@@ -57,7 +57,7 @@ func (c Consumer) ProcessMessage() {
 
 func (c Consumer) getVideoDownloadParams() (dto.VideoDownloadDto, amqp.Delivery, error) {
 	delivery := <-c.rabbit.DeliveryCh
-	log.Printf("received a message: %s\n", delivery.Body)
+	log.Debugf("received a message: %s\n", delivery.Body)
 
 	var rabbitMessage dto.ReceivedMessageDto
 
@@ -96,7 +96,7 @@ func (c Consumer) sendVideoInfo(videoInfo dto.VideoInfoDto) error {
 		return fmt.Errorf("error publishing video info: %s", msg)
 	}
 
-	log.Printf("sent msg: %s\n into queue", string(msg))
+	log.Debugf("sent msg: %s\n into queue", string(msg))
 	return nil
 }
 
@@ -128,5 +128,5 @@ func (c Consumer) sendError(errToSend string) {
 		return
 	}
 
-	log.Printf("sent msg: %s into queue", string(msg))
+	log.Debugf("sent msg: %s into queue", string(msg))
 }

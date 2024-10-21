@@ -11,6 +11,8 @@ import (
 )
 
 func Run() {
+	log.SetLevel(log.DebugLevel)
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.WithError(err).Fatal("error loading config")

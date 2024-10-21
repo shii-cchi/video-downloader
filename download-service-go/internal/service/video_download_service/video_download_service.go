@@ -32,12 +32,16 @@ func (v *VideoDownloadService) setVideoDownloadStrategy(strategy VideoDownloadSt
 }
 
 func (v *VideoDownloadService) Download(downloadParams dto.VideoDownloadDto) (dto.VideoInfoDto, error) {
+	log.Debugf("starting download video(%s)", downloadParams.VideoURL)
+
 	switch downloadParams.Type {
 	case youTubeVideoType:
 		v.setVideoDownloadStrategy(strategies.YouTubeDownloadStrategy{})
 	default:
 		v.setVideoDownloadStrategy(strategies.GeneralDownloadStrategy{})
 	}
+
+	log.Debugf("download strategy is %s", downloadParams.Type)
 
 	videoName, realPath, err := v.strategy.Download(downloadParams.VideoURL, downloadParams.Quality)
 	if err != nil {
