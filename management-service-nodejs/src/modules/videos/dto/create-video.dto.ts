@@ -7,7 +7,6 @@ export class CreateVideoDto {
   videoURL: string;
 
   @IsEnum(VideoType)
-  @IsNotEmpty()
   type: VideoType;
 
   @IsEnum(VideoQuality)

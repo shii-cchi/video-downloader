@@ -5,6 +5,7 @@ import EnvironmentConfig from 'src/lib/configuration/env.config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigurationModule } from '../lib/configuration/configuration.module';
 import { ConfigurationService } from '../lib/configuration/configuration.service';
+import { FoldersModule } from './folders/folders.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ConfigurationService } from '../lib/configuration/configuration.service
       }),
     }),
     VideosModule,
+    FoldersModule,
   ],
 })
 export class AppModule {}

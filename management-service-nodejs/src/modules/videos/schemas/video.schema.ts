@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 export type VideoDocument = HydratedDocument<Video>;
 
@@ -9,7 +9,7 @@ export class Video {
   videoName: string;
 
   @Prop()
-  folderID: mongoose.Schema.Types.ObjectId;
+  folderID: Types.ObjectId;
 
   @Prop()
   realPath: string;
