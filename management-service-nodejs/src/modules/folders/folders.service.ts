@@ -6,12 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Folder, FolderDocument } from './schemas/folder.schema';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { plainToInstance } from 'class-transformer';
 import { FolderPreviewDto } from './dto/folder-preview.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
+import { ContentPreviewDto } from './dto/content-preview.dto';
 
 @Injectable()
 export class FoldersService {
@@ -60,7 +61,10 @@ export class FoldersService {
     });
   }
 
-  async update({ folderName, parentDirID }: UpdateFolderDto, id: string) {
+  async update(
+    { folderName, parentDirID }: UpdateFolderDto,
+    id: Types.ObjectId,
+  ) {
     if (parentDirID) {
       const parentFolder = await this.folderModel.findById(parentDirID);
       if (!parentFolder) {
@@ -114,14 +118,80 @@ export class FoldersService {
     });
   }
 
-  async delete(id: string) {
-    // get nested folders and delete these
+  async delete(id: Types.ObjectId) {
+    const folder = await this.folderModel.findById(id);
+    if (!folder) {
+      throw new NotFoundException(`Folder with ID ${id} not found`);
+    }
+
+    const pipeline = [
+      {
+        $match: { parentDirID: id },
+      },
+      {
+        $graphLookup: {
+          from: 'folders',
+          startWith: '$_id',
+          connectFromField: '_id',
+          connectToField: 'parentDirID',
+          as: 'nestedFolders',
+        },
+      },
+      {
+        $project: {
+          allFolderIds: {
+            $setUnion: [
+              [{ $toObjectId: '$_id' }],
+              {
+                $map: {
+                  input: '$nestedFolders',
+                  as: 'folder',
+                  in: '$$folder._id',
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $unwind: {
+          path: '$allFolderIds',
+        },
+      },
+      {
+        $project: {
+          _id: '$allFolderIds',
+        },
+      },
+    ];
+
+    const nestedFoldersID = await this.folderModel.aggregate(pipeline).exec();
+    const arrNestedFolderID = nestedFoldersID.map((item) => item._id);
+    await this.folderModel.deleteMany({
+      _id: { $in: arrNestedFolderID },
+    });
+    this.logger.debug(`Deleting nested folders from db: ${arrNestedFolderID}`);
 
     // get all nested videos and delete these
 
-    const deletedFolder = await this.folderModel.findByIdAndDelete(id);
-    if (!deletedFolder) {
+    this.logger.debug(`Deleting folder from db: ${id}`);
+    await this.folderModel.findByIdAndDelete(id);
+  }
+
+  async get(id: Types.ObjectId): Promise<ContentPreviewDto> {
+    const folder = await this.folderModel.findById(id);
+    if (!folder) {
       throw new NotFoundException(`Folder with ID ${id} not found`);
     }
+
+    this.logger.debug(`Getting folder content from db: ${id}`);
+    const subFolders = await this.folderModel.find({ parentDirID: id }).lean();
+    const subFoldersDto = plainToInstance(FolderPreviewDto, subFolders, {
+      excludeExtraneousValues: true,
+    });
+
+    // get videos
+
+    return { videos: [], folders: subFoldersDto };
   }
 }

@@ -2,6 +2,7 @@ import { IsNotEmpty, MaxLength } from 'class-validator';
 import { IsObjectId } from '../../../lib/decorators/isObjectID.decorator';
 import { Types } from 'mongoose';
 import { AnyOf } from '../../../lib/decorators/anyOf.decorator';
+import { Transform } from 'class-transformer';
 
 @AnyOf(['folderName', 'parentDirID'])
 export class UpdateFolderDto {
@@ -11,5 +12,6 @@ export class UpdateFolderDto {
 
   @IsNotEmpty()
   @IsObjectId({ message: 'parentDirID should be objectID' })
+  @Transform(({ value }) => new Types.ObjectId(value as string))
   parentDirID: Types.ObjectId;
 }

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Inject,
   Logger,
   Param,
@@ -14,9 +15,11 @@ import { FoldersService } from './folders.service';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { FolderPreviewDto } from './dto/folder-preview.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
+import { ContentPreviewDto } from './dto/content-preview.dto';
+import { ObjectIdDto } from '../../lib/dto/object-id.dto';
 
 @Controller('folders')
-@UsePipes(new ValidationPipe())
+@UsePipes(new ValidationPipe({ transform: true }))
 export class FoldersController {
   @Inject()
   private readonly logger: Logger;
@@ -28,6 +31,7 @@ export class FoldersController {
   async create(
     @Body() createFolderDto: CreateFolderDto,
   ): Promise<FolderPreviewDto> {
+    console.log(createFolderDto);
     this.logger.debug(
       `Creating folder request has been received with body: ${JSON.stringify(createFolderDto)}`,
     );
@@ -42,7 +46,7 @@ export class FoldersController {
   @Put('/:id')
   async update(
     @Body() updateFolderDto: UpdateFolderDto,
-    @Param('id') id: string,
+    @Param() { id }: ObjectIdDto,
   ): Promise<FolderPreviewDto> {
     this.logger.debug(
       `Updating folder request has been received with body: ${JSON.stringify(updateFolderDto)} and for folder ${id}`,
@@ -56,12 +60,24 @@ export class FoldersController {
   }
 
   @Delete('/:id')
-  async delete(@Param('id') id: string) {
+  async delete(@Param() { id }: ObjectIdDto): Promise<void> {
     this.logger.debug(
       `Deleting folder request has been received for folder ${id}`,
     );
 
     await this.foldersService.delete(id);
     this.logger.log(`Folder has been successfully deleted: ${id}`);
+  }
+
+  @Get('/:id')
+  async get(@Param() { id }: ObjectIdDto): Promise<ContentPreviewDto> {
+    this.logger.debug(
+      `Getting folder request has been received for folder ${id}`,
+    );
+
+    const content = await this.foldersService.get(id);
+    this.logger.log(`Content folder has been received: ${id}`);
+
+    return content;
   }
 }
