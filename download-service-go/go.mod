@@ -7,6 +7,7 @@ require (
 	github.com/kkdai/youtube/v2 v2.10.1
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/sirupsen/logrus v1.9.3
+	go.mongodb.org/mongo-driver v1.17.1
 )
 
 require (
@@ -16,5 +17,5 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7 // indirect
 	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/text v0.17.0 // indirect
 )

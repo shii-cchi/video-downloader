@@ -9,4 +9,5 @@ type VideoDownloadDto struct {
 	VideoURL string `json:"videoURL"`
 	Type     string `json:"type"`
 	Quality  string `json:"quality"`
+	FolderID string `json:"folderID"`
 }

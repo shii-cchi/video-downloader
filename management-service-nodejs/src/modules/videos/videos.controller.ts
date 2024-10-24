@@ -4,6 +4,7 @@ import {
   Inject,
   Logger,
   Post,
+  UseFilters,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -17,9 +18,11 @@ import {
 } from '@nestjs/microservices';
 import { VideoInfoDto } from './dto/video-info.dto';
 import { ChannelWrapper } from 'amqp-connection-manager';
+import { HttpExceptionFilter } from '../../lib/filters/http-exception.filter';
 
 @Controller('videos')
-@UsePipes(new ValidationPipe())
+@UsePipes(new ValidationPipe({ transform: true }))
+@UseFilters(new HttpExceptionFilter())
 export class VideosController {
   @Inject()
   private readonly logger: Logger;
@@ -28,12 +31,14 @@ export class VideosController {
   private readonly videosService: VideosService;
 
   @Post('/download-to-server')
-  download(@Body() createVideoDto: CreateVideoDto): { message: string } {
+  async download(
+    @Body() createVideoDto: CreateVideoDto,
+  ): Promise<{ message: string }> {
     this.logger.debug(
       `Download request has been received with body: ${JSON.stringify(createVideoDto)}`,
     );
 
-    this.videosService.download(createVideoDto);
+    await this.videosService.download(createVideoDto);
     return { message: 'Starting video download' };
   }
 

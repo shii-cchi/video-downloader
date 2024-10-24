@@ -57,6 +57,7 @@ func (v *VideoDownloadService) Download(downloadParams dto.VideoDownloadDto) (dt
 
 	return dto.VideoInfoDto{
 		VideoName:   videoName,
+		FolderID:    downloadParams.FolderID,
 		RealPath:    realPath,
 		PreviewPath: previewPath,
 	}, nil

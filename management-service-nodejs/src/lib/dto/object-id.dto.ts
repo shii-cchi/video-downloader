@@ -7,6 +7,10 @@ export class ObjectIdDto {
   @IsOptional()
   @IsNotEmpty()
   @IsObjectId({ message: 'id should be objectID' })
-  @Transform(({ value }) => value && new Types.ObjectId(value as string))
+  @Transform(({ value }) =>
+    value && Types.ObjectId.isValid(value as string)
+      ? new Types.ObjectId(value as string)
+      : value,
+  )
   id: Types.ObjectId;
 }

@@ -1,11 +1,11 @@
 import { FolderPreviewDto } from './folder-preview.dto';
-import { VideoInfoDto } from '../../videos/dto/video-info.dto';
 import { Expose } from 'class-transformer';
+import { VideoPreviewDto } from '../../videos/dto/video-preview.dto';
 
 export class ContentPreviewDto {
   @Expose()
   folders: FolderPreviewDto[];
 
   @Expose()
-  videos: VideoInfoDto[];
+  videos: VideoPreviewDto[];
 }

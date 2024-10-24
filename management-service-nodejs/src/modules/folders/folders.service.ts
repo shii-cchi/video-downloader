@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  forwardRef,
   Inject,
   Injectable,
   Logger,
@@ -13,9 +14,13 @@ import { plainToInstance } from 'class-transformer';
 import { FolderPreviewDto } from './dto/folder-preview.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
 import { ContentPreviewDto } from './dto/content-preview.dto';
+import { VideosService } from '../videos/videos.service';
 
 @Injectable()
 export class FoldersService {
+  @Inject(forwardRef(() => VideosService))
+  private readonly videosService: VideosService;
+
   @Inject()
   private readonly logger: Logger;
 
@@ -27,12 +32,7 @@ export class FoldersService {
     parentDirID,
   }: CreateFolderDto): Promise<FolderPreviewDto> {
     if (parentDirID) {
-      const parentFolder = await this.folderModel.findById(parentDirID);
-      if (!parentFolder) {
-        throw new NotFoundException(
-          `Parent dir with ID ${parentDirID} not found`,
-        );
-      }
+      await this.checkExist(parentDirID);
     }
 
     const folder = await this.folderModel.findOne({
@@ -44,13 +44,6 @@ export class FoldersService {
         `Folder with this name ${folderName} already exist in ${parentDirID ? `this parent dir(${parentDirID})` : 'root folder'}`,
       );
     }
-
-    this.logger.debug(
-      `Saving folder to db: ${JSON.stringify({
-        folderName,
-        parentDirID,
-      })}`,
-    );
 
     const createdFolder = await this.folderModel.create({
       folderName,
@@ -66,12 +59,7 @@ export class FoldersService {
     id: Types.ObjectId,
   ) {
     if (parentDirID) {
-      const parentFolder = await this.folderModel.findById(parentDirID);
-      if (!parentFolder) {
-        throw new NotFoundException(
-          `Parent dir with ID ${parentDirID} not found`,
-        );
-      }
+      await this.checkExist(parentDirID);
     }
 
     if (folderName) {
@@ -93,13 +81,6 @@ export class FoldersService {
       }
     }
 
-    this.logger.debug(
-      `Updating folder to db: ${JSON.stringify({
-        ...(folderName ? { folderName } : {}),
-        ...(parentDirID ? { parentDirID } : {}),
-      })}`,
-    );
-
     const updatedFolder = await this.folderModel.findByIdAndUpdate(
       id,
       {
@@ -108,7 +89,6 @@ export class FoldersService {
       },
       { new: true },
     );
-
     if (!updatedFolder) {
       throw new NotFoundException(`Folder with ID ${id} not found`);
     }
@@ -119,10 +99,7 @@ export class FoldersService {
   }
 
   async delete(id: Types.ObjectId) {
-    const folder = await this.folderModel.findById(id);
-    if (!folder) {
-      throw new NotFoundException(`Folder with ID ${id} not found`);
-    }
+    await this.checkExist(id);
 
     const pipeline = [
       {
@@ -167,33 +144,33 @@ export class FoldersService {
 
     const nestedFoldersID = await this.folderModel.aggregate(pipeline).exec();
     const arrNestedFolderID = nestedFoldersID.map((item) => item._id);
+    arrNestedFolderID.push(id);
     await this.folderModel.deleteMany({
       _id: { $in: arrNestedFolderID },
     });
-    this.logger.debug(`Deleting nested folders from db: ${arrNestedFolderID}`);
 
-    // get all nested videos and delete these
-
-    this.logger.debug(`Deleting folder from db: ${id}`);
-    await this.folderModel.findByIdAndDelete(id);
+    await this.videosService.deleteVideos(arrNestedFolderID);
   }
 
   async get(id: Types.ObjectId): Promise<ContentPreviewDto> {
     if (id) {
-      const folder = await this.folderModel.findById(id);
-      if (!folder) {
-        throw new NotFoundException(`Folder with ID ${id} not found`);
-      }
+      await this.checkExist(id);
     }
 
-    this.logger.debug(`Getting ${id ? `${id}`: 'root'} folder content from db`);
     const subFolders = await this.folderModel.find({ parentDirID: id }).lean();
     const subFoldersDto = plainToInstance(FolderPreviewDto, subFolders, {
       excludeExtraneousValues: true,
     });
 
-    // get videos
+    const videos = await this.videosService.get(id);
 
-    return { videos: [], folders: subFoldersDto };
+    return { videos: videos, folders: subFoldersDto };
+  }
+
+  async checkExist(id: Types.ObjectId) {
+    const folder = await this.folderModel.findById(id);
+    if (!folder) {
+      throw new NotFoundException(`Folder with ID ${id} not found`);
+    }
   }
 }

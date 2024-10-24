@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  UseFilters,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -17,9 +18,11 @@ import { FolderPreviewDto } from './dto/folder-preview.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
 import { ContentPreviewDto } from './dto/content-preview.dto';
 import { ObjectIdDto } from '../../lib/dto/object-id.dto';
+import { HttpExceptionFilter } from '../../lib/filters/http-exception.filter';
 
 @Controller('folders')
-@UsePipes(new ValidationPipe({ transform: true, stopAtFirstError: true }))
+@UsePipes(new ValidationPipe({ transform: true }))
+@UseFilters(new HttpExceptionFilter())
 export class FoldersController {
   @Inject()
   private readonly logger: Logger;
@@ -71,11 +74,13 @@ export class FoldersController {
   @Get('/:id?')
   async get(@Param() { id }: ObjectIdDto): Promise<ContentPreviewDto> {
     this.logger.debug(
-      `Getting folder request has been received for ${id ? `${id}`: 'root'} folder`,
+      `Getting folder request has been received for ${id ? `${id}` : 'root'} folder`,
     );
 
     const content = await this.foldersService.get(id);
-    this.logger.log(`Content has been received for ${id ? `${id}`: 'root'} folder`);
+    this.logger.log(
+      `Content has been received for ${id ? `${id}` : 'root'} folder`,
+    );
 
     return content;
   }

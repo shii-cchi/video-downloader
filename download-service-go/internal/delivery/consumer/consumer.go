@@ -69,6 +69,7 @@ func (c Consumer) getVideoDownloadParams() (dto.VideoDownloadDto, amqp.Delivery,
 		VideoURL: rabbitMessage.Data.VideoURL,
 		Type:     rabbitMessage.Data.Type,
 		Quality:  rabbitMessage.Data.Quality,
+		FolderID: rabbitMessage.Data.FolderID,
 	}, delivery, nil
 }
 
