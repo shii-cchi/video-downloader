@@ -179,12 +179,14 @@ export class FoldersService {
   }
 
   async get(id: Types.ObjectId): Promise<ContentPreviewDto> {
-    const folder = await this.folderModel.findById(id);
-    if (!folder) {
-      throw new NotFoundException(`Folder with ID ${id} not found`);
+    if (id) {
+      const folder = await this.folderModel.findById(id);
+      if (!folder) {
+        throw new NotFoundException(`Folder with ID ${id} not found`);
+      }
     }
 
-    this.logger.debug(`Getting folder content from db: ${id}`);
+    this.logger.debug(`Getting ${id ? `${id}`: 'root'} folder content from db`);
     const subFolders = await this.folderModel.find({ parentDirID: id }).lean();
     const subFoldersDto = plainToInstance(FolderPreviewDto, subFolders, {
       excludeExtraneousValues: true,

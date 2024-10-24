@@ -12,6 +12,10 @@ export class UpdateFolderDto {
 
   @IsNotEmpty()
   @IsObjectId({ message: 'parentDirID should be objectID' })
-  @Transform(({ value }) => new Types.ObjectId(value as string))
+  @Transform(({ value }) =>
+    value && Types.ObjectId.isValid(value as string)
+      ? new Types.ObjectId(value as string)
+      : value,
+  )
   parentDirID: Types.ObjectId;
 }

@@ -19,7 +19,7 @@ import { ContentPreviewDto } from './dto/content-preview.dto';
 import { ObjectIdDto } from '../../lib/dto/object-id.dto';
 
 @Controller('folders')
-@UsePipes(new ValidationPipe({ transform: true }))
+@UsePipes(new ValidationPipe({ transform: true, stopAtFirstError: true }))
 export class FoldersController {
   @Inject()
   private readonly logger: Logger;
@@ -31,7 +31,6 @@ export class FoldersController {
   async create(
     @Body() createFolderDto: CreateFolderDto,
   ): Promise<FolderPreviewDto> {
-    console.log(createFolderDto);
     this.logger.debug(
       `Creating folder request has been received with body: ${JSON.stringify(createFolderDto)}`,
     );
@@ -66,17 +65,17 @@ export class FoldersController {
     );
 
     await this.foldersService.delete(id);
-    this.logger.log(`Folder has been successfully deleted: ${id}`);
+    this.logger.log(`Folder with id: ${id} has been successfully deleted`);
   }
 
-  @Get('/:id')
+  @Get('/:id?')
   async get(@Param() { id }: ObjectIdDto): Promise<ContentPreviewDto> {
     this.logger.debug(
-      `Getting folder request has been received for folder ${id}`,
+      `Getting folder request has been received for ${id ? `${id}`: 'root'} folder`,
     );
 
     const content = await this.foldersService.get(id);
-    this.logger.log(`Content folder has been received: ${id}`);
+    this.logger.log(`Content has been received for ${id ? `${id}`: 'root'} folder`);
 
     return content;
   }
